@@ -1,21 +1,17 @@
 # claude-subagents-effort
 
+## Disclaimer: Vibecoded with Opus 5, tested on macOS but not Windows or Linux. Use at your own risk.
+
 Per-subagent reasoning effort for Claude Code.
 
-Claude Code lets you pick the *model* for a subagent when you spawn it, but not
-the *effort*. This adds an `effort` parameter to the Agent tool, so a strong
-model can be spawned to do cheap work, or a small one to think hard about a
-narrow problem:
+This patches Claude Code to add an `effort` parameter to the Agent tool:
 
 ```
 Agent(subagent_type="code-reviewer", model="opus", effort="low", ...)
 ```
 
 Fixes [anthropics/claude-code#43083](https://github.com/anthropics/claude-code/issues/43083).
-The subagents stay ordinary in-session subagents — visible in the agents panel,
-addressable with `SendMessage`, resumable, killable — unlike the
-`claude --bg --effort` workaround going around on that issue, which spawns
-detached out-of-session runs.
+The subagents stay ordinary in-session subagents, with the same functionality.
 
 **No binaries are distributed here.** The installer patches a *copy* of the
 Claude Code you already have. Your install is opened read-only and never
@@ -25,8 +21,7 @@ modified.
 
 ## Install
 
-Clone, then run. Deliberately not `curl | sh` — this rebuilds your coding
-agent, so the code should be on your disk where you can read it first.
+Clone, then run.
 
 **macOS / Linux**
 
@@ -66,7 +61,7 @@ Every option is also a flag, for unattended installs:
 > **Verification costs a little usage.** The `live` check runs a real two-turn
 > Sonnet exchange (a `sonnet-4-6` session at `low` effort spawns a `sonnet-4-6`
 > subagent at `medium` whose entire job is to answer `hi`) and reads the actual
-> request bodies to confirm the effort reached the wire. A few cents at most.
+> request bodies to confirm the effort reached the wire.
 > Pick `offline` at option 5 for a free check that uses canned responses, or
 > `none` to skip it.
 
@@ -98,18 +93,14 @@ subagent spawned by a low-effort subagent stays low unless told otherwise.
 And the effective effort is written into `agent-*.meta.json` at every depth, so
 a configuration can be checked rather than trusted.
 
-## Please read this part
+## Please read
 
-- **This is not supported by Anthropic, and it is not affiliated with them.**
-  Do not file bugs against Claude Code from a patched build, and do not ask
-  Anthropic support about it — if something is broken here, it is this repo's
-  problem, so [open an issue](https://github.com/pikalover6/claude-subagents-effort/issues).
 - **Auto-update is force-disabled for the patched build only.** Claude Code's
   updater installs into the shared versions directory and repoints the stock
   `claude` launcher, so an update triggered from `claude2` would overwrite your
   real install. The launcher sets `DISABLE_AUTOUPDATER=1` for itself; no shared
   config is touched, and stock `claude` keeps updating normally.
-- **`claude2` stays on the version you built it from.** When Claude Code
+- **The patched version stays on the version you built it from.** When Claude Code
   updates, re-run the installer to rebuild against the new one. Expect this to
   work most of the time and to occasionally need an anchor updated — see below.
 - **Claude Code is proprietary software.** This repo distributes only its own
@@ -122,8 +113,7 @@ a configuration can be checked rather than trusted.
 
 ## What it actually changes
 
-Eight edits, about 1.5 KB, to the bundled `cli.js` — the mechanism was already
-there and simply had nothing feeding it:
+Eight edits, about 1.5 KB, to the bundled `cli.js`:
 
 | Where | Change |
 |-------|--------|
@@ -136,13 +126,7 @@ there and simply had nothing feeding it:
 | subagent spawn metadata | persist the effective effort to `agent-*.meta.json` |
 | tool description (×2) | document the parameter |
 
-The interesting part is how little there is: Claude Code already converts
-`agentDefinition.effort` into a `{kind:"effort"}` context layer and already
-flows that to the child. The Agent tool simply never populated it.
-[FINDINGS.md](FINDINGS.md) has the full reverse-engineering writeup — the Bun
-container format, the bytecode cache that makes naive patching a silent no-op,
-where each edit goes and why, and how to re-derive them all when a release
-moves things.
+[FINDINGS.md](FINDINGS.md) has the full reverse-engineering writeup.
 
 ## When a new Claude Code release breaks it
 
@@ -168,22 +152,3 @@ Two ways to fix it:
 
 Removes the launcher and the patched binary. Nothing under `~/.claude` is
 touched.
-
-## Layout
-
-```
-install.sh / install.ps1   entry points
-ccpatch/
-  __main__.py              the interactive installer
-  locate.py                find the installed binary (by parsing it, not by path)
-  bunfmt.py                read/write the Bun standalone container
-  patch.py                 the edits, as structural regexes
-  build.py                 extract -> patch -> re-embed -> sign
-  sign.py                  per-platform signing
-  install.py               launcher + manifest
-  verify.py                wire-level verification, live or offline
-skills/patch-effort/       the self-repairing Claude Code skill
-FINDINGS.md                how all of it works
-```
-
-MIT for everything in this repo. That covers this tooling only, not Claude Code.
