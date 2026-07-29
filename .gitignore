@@ -1,0 +1,10 @@
+# Extracted and patched Claude Code sources (--keep-sources). Large, and not
+# ours to redistribute.
+cli.orig.js
+cli.patched.js
+out/
+*.partial
+
+__pycache__/
+*.pyc
+.DS_Store
