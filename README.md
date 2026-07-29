@@ -1,6 +1,9 @@
 # claude-subagents-effort
 
-## Disclaimer: Vibecoded with Opus 5, tested on macOS but not Windows or Linux. Use at your own risk.
+Disclaimer: Vibecoded and not extensively tested.
+Use at your own risk.
+
+---
 
 Per-subagent reasoning effort for Claude Code.
 
